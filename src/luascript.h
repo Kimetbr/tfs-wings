@@ -995,6 +995,8 @@ class LuaScriptInterface
 		static int luaPlayerGetStoreInbox(lua_State* L);
         static int luaPlayerSetAttackSpeed(lua_State* L);
         static int luaPlayerGetAttackSpeed(lua_State* L);
+		static int luaPlayerAddWings(lua_State* L);
+		static int luaPlayerAddAura(lua_State* L);
 
 		// Monster
 		static int luaMonsterCreate(lua_State* L);

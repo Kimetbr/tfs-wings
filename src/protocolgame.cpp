@@ -811,13 +811,18 @@ void ProtocolGame::parseSetOutfit(NetworkMessage& msg)
 	newOutfit.lookFeet = msg.getByte();
 	newOutfit.lookAddons = msg.getByte();
 	newOutfit.lookMount = msg.get<uint16_t>();
+	newOutfit.lookWings = msg.get<uint16_t>();
+	newOutfit.lookAura = msg.get<uint16_t>();
 	addGameTask(&Game::playerChangeOutfit, player->getID(), newOutfit);
 }
 
 void ProtocolGame::parseToggleMount(NetworkMessage& msg)
 {
-	bool mount = msg.getByte() != 0;
-	addGameTask(&Game::playerToggleMount, player->getID(), mount);
+	int mount = msg.get<int8_t>();
+	int wings = msg.get<int8_t>();
+	int aura = msg.get<int8_t>();
+
+	addGameTask(&Game::playerToggleOutfitExtension, player->getID(), mount, wings, aura);
 }
 
 void ProtocolGame::parseUseItem(NetworkMessage& msg)
@@ -2776,6 +2781,32 @@ void ProtocolGame::sendOutfitWindow()
 		msg.addString(mount->name);
 	}
 
+	std::vector<const Wing*> wings;
+	for (const Wing& wing: g_game.wings.getWings()) {
+		if (player->hasWing(&wing)) {
+			wings.push_back(&wing);
+		}
+	}
+
+	msg.addByte(wings.size());
+	for (const Wing* wing : wings) {
+		msg.add<uint16_t>(wing->clientId);
+		msg.addString(wing->name);
+	}
+
+	std::vector<const Aura*> auras;
+	for (const Aura& aura : g_game.auras.getAuras()) {
+		if (player->hasAura(&aura)) {
+			auras.push_back(&aura);
+		}
+	}
+
+	msg.addByte(auras.size());
+	for (const Aura* aura : auras) {
+		msg.add<uint16_t>(aura->clientId);
+		msg.addString(aura->name);
+	}
+
 	writeToOutputBuffer(msg);
 }
 
@@ -3011,6 +3042,8 @@ void ProtocolGame::AddOutfit(NetworkMessage& msg, const Outfit_t& outfit)
 	}
 
 	msg.add<uint16_t>(outfit.lookMount);
+	msg.add<uint16_t>(outfit.lookWings);
+	msg.add<uint16_t>(outfit.lookAura);
 }
 
 void ProtocolGame::AddWorldLight(NetworkMessage& msg, LightInfo lightInfo)
